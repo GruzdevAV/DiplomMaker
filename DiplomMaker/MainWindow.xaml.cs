@@ -140,22 +140,37 @@ namespace DiplomMaker
         }
 
 
-        private void btn_word_save_Click(object sender, RoutedEventArgs e)
+        private async void btn_word_save_Click(object sender, RoutedEventArgs e)
         {
+            if (tbox_word_path.Text == string.Empty)
+            {
+                btn_word_save_as_Click(sender, e);
+                return;
+            }
+            await SaveWordDoc(tbox_word_path.Text);
 
         }
 
-        private void btn_word_save_as_Click(object sender, RoutedEventArgs e)
+        private async void btn_word_save_as_Click(object sender, RoutedEventArgs e)
         {
-
+            _word_file = new SaveFileDialog { Filter = "*.doc|*.doc|*.docx|*.docx|Все файлы (*.*)|*.*" };
+            if (_word_file.ShowDialog() != true)
+                return;
+            tbox_word_path.Text = _word_file.FileName;
+            await SaveWordDoc(tbox_word_path.Text);
         }
 
-        private void btn_update_doc_Click(object sender, RoutedEventArgs e)
+        private async Task SaveWordDoc(string fileName)
         {
-            var fileName = tbox_word_path.Text;
-            MakeDoc doc = new MakeDoc(fileName);
-            doc.AddText(MarkupText);
-            doc.SaveAndFinish();
+            MessageBox.Show("Начинаю сохранение Word-файла.", "Ожидайте");
+
+            await Task.Run(() =>
+            {
+                MakeDoc doc = new MakeDoc(fileName);
+                doc.AddText(MarkupText);
+                doc.SaveAndFinish();
+                MessageBox.Show("Файл Word сохранён.", "Успех");
+            });
         }
         //Видеть документ https://stackoverflow.com/questions/1859641/load-word-excel-into-wpf
     }

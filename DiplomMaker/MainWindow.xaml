@@ -16,13 +16,13 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <!--https://stackoverflow.com/a/7433840-->
-        <TextBox x:Name="tbox_markup_path" Margin="107,15,10,0" TextWrapping="Wrap" VerticalAlignment="Top" TabIndex="1">
+        <TextBox IsReadOnly="True" x:Name="tbox_markup_path" Margin="107,15,10,0" TextWrapping="Wrap" VerticalAlignment="Top" TabIndex="1">
             <TextBox.Style>
                 <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
                     <Style.Resources>
                         <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                             <VisualBrush.Visual>
-                                <Label Content="Введите путь к файлу разметки" Foreground="LightGray" />
+                                <Label Content="Выберите файл с помощью кнопок." Foreground="LightGray" />
                             </VisualBrush.Visual>
                         </VisualBrush>
                     </Style.Resources>
@@ -43,7 +43,7 @@
         <Button x:Name="btn_markup_choose" Content="Выбрать" HorizontalAlignment="Left" Margin="10,41,0,10" VerticalAlignment="Top" TabIndex="2" Click="btn_markup_choose_Click"/>
         <Button x:Name="btn_markup_save" Content="Сохранить" HorizontalAlignment="Right" Margin="0,41,99,0" VerticalAlignment="Top" TabIndex="4" Click="btn_markup_save_Click"/>
         <Button x:Name="btn_markup_save_as" Content="Сохранить как" HorizontalAlignment="Right" Margin="0,41,10.3,0" VerticalAlignment="Top" TabIndex="5" Click="btn_markup_save_as_Click"/>
-        <Button x:Name="btn_markup_load" Content="Загрузить" HorizontalAlignment="Left" Margin="65,41,0,0" VerticalAlignment="Top" TabIndex="3" Click="btn_markup_load_Click"/>
+        <Button x:Name="btn_markup_load" Content="Перезагрузить файл" HorizontalAlignment="Left" Margin="65,41,0,0" VerticalAlignment="Top" TabIndex="3" Click="btn_markup_load_Click"/>
         <Label Content="Файл разметки" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
         <RichTextBox x:Name="rtb_markup_text" Grid.Row="1" Margin="10,10,10,10" TextChanged="rtb_markup_text_TextChanged" TabIndex="6" UndoLimit="26" IsDocumentEnabled="True">
             <FlowDocument/>
@@ -53,13 +53,13 @@
                 </Style>
             </RichTextBox.Resources>
         </RichTextBox>
-        <TextBox x:Name="tbox_word_path" Margin="85,15,10,0" TextWrapping="Wrap" VerticalAlignment="Top" TabIndex="1" Grid.Column="1">
+        <TextBox IsReadOnly="True" x:Name="tbox_word_path" Margin="85,15,10,0" TextWrapping="Wrap" VerticalAlignment="Top" TabIndex="1" Grid.Column="1">
             <TextBox.Style>
                 <Style xmlns:sys="clr-namespace:System;assembly=mscorlib" TargetType="{x:Type TextBox}">
                     <Style.Resources>
                         <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                             <VisualBrush.Visual>
-                                <Label Content="Введите путь к файлу Word" Foreground="LightGray" />
+                                <Label Content="Выберите файл с помощью кнопок." Foreground="LightGray" />
                             </VisualBrush.Visual>
                         </VisualBrush>
                     </Style.Resources>
@@ -80,8 +80,10 @@
         <Button x:Name="btn_word_save" Content="Сохранить" HorizontalAlignment="Right" Margin="0,41,99,0" VerticalAlignment="Top" TabIndex="4" Grid.Column="1" Click="btn_word_save_Click"/>
         <Button x:Name="btn_word_save_as" Content="Сохранить как" HorizontalAlignment="Right" Margin="0,41,10,0" VerticalAlignment="Top" TabIndex="5" Grid.Column="1" Click="btn_word_save_as_Click"/>
         <Label Content="Файл Word" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Grid.Column="1"/>
-        <DocumentViewer x:Name="dv_word" Grid.Column="1" Grid.Row="1" Margin="10,10,10,10"/>
-        <Button x:Name="btn_update_doc" Content="Обновить документ" HorizontalAlignment="Left" Margin="10,41,0,0" VerticalAlignment="Top" TabIndex="2" Grid.Column="1" Click="btn_update_doc_Click"/>
+        <DocumentViewer x:Name="dv_word" Grid.Column="1" Grid.Row="1" Margin="10,10,10,10" IsEnabled="False" Opacity="0.5"/>
+        <Button x:Name="btn_update_doc" Content="Обновить документ" HorizontalAlignment="Left" Margin="10,41,0,0" VerticalAlignment="Top" TabIndex="2" Grid.Column="1" IsEnabled="False" Visibility="Collapsed"/>
+        <TextBlock Grid.Column="1" HorizontalAlignment="Left" Margin="25,134,25,0" Grid.Row="1" Text="Для просмотра документа прямо в приложении.
+                   Нужно будет понять, как сделать" VerticalAlignment="Top" Height="155" FontSize="22" TextWrapping="Wrap"/>
 
     </Grid>
 </Window>
