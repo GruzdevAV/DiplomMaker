@@ -63,6 +63,7 @@
     <Compile Include="CSharpCode\InitStyles.cs" />
     <Compile Include="CSharpCode\MakeDoc.cs" />
     <Compile Include="CSharpCode\MyStyle.cs" />
+    <Compile Include="CSharpCode\AnotherWayToInitStyles.cs" />
     <Compile Include="CSharpCode\Paragraph.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
