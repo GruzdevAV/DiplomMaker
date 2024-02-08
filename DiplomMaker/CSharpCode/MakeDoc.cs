@@ -8,6 +8,8 @@ using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media.TextFormatting;
 using System.Xml.Linq;
 using Word = Microsoft.Office.Interop.Word;
@@ -41,19 +43,88 @@ namespace DiplomMaker
         public string Path { get; set; }
         public MakeDoc(string path = null)
         {
+            // Путь для сохранения файла по умолчанию
             Path = path;
+
             // init word things
             WordApp = new Word.Application();
             WordDoc = WordApp.Documents.Add();
 
-            // Initialize Styles
+            // Initialize
             InitStyles();
+            // Настройка отствупов полей
+            SetPageMargin();
+            // Настройка нумерации страниц
+            SetPageNumbers();
         }
+
+        private void SetPageNumbers()
+        {
+            // Вставлю разрыв раздела со следующей страницы,
+            // а также заготавливаю места для титульника и содержания
+            var selection = WordApp.Selection;
+            selection.TypeText("Место для титульника");
+            selection.InsertBreak(Word.WdBreakType.wdSectionBreakNextPage);
+            selection.TypeText("Место для оглавления. Там дальше должен появиться перенос строки, так как следующий параграф должен быть заголовком первого уровня \"ВВЕДЕНИЕ\", а перед заголовками первого уровня ставится перенос страницы.");
+
+            // Настраиваю номер страницы для втоорого раздела
+            var footer = WordDoc.Sections[2].Footers[Word.WdHeaderFooterIndex.wdHeaderFooterPrimary];
+            footer.LinkToPrevious = false;
+            var pageNumbers = footer.PageNumbers;
+            pageNumbers.NumberStyle = Word.WdPageNumberStyle.wdPageNumberStyleArabic;
+            pageNumbers.StartingNumber = 2;
+
+            // Добавить сам номер страницы
+            var pageNumber = footer.PageNumbers.Add(Word.WdPageNumberAlignment.wdAlignPageNumberCenter);
+            
+            // Перехожу к текущему нижнему колонтитулу
+            WordApp.ActiveWindow.ActivePane.View.SeekView = Word.WdSeekView.wdSeekCurrentPageFooter;
+            // Передвигаю курсор на 2 элемента влево (эквивалентно нажатию 2 раза на кнопку ←)
+            // Это нужно, чтобы выделить тот странный объект, который создался при создании pageNumber
+            selection.MoveLeft(Word.WdUnits.wdCharacter, 2);
+            // Настраиваю стиль номера страницы
+            // Можно, конечно, и не копировать стиль номера страницы, а установить стиль RegularText,
+            // потом установить выравнивание по центру и удалить появившейся откуда-то перенос строки ниже номера,
+            // но я решил оставить тот странный плавающий объект номера страницы
+            var style = (Word.Style)selection.get_Style();
+            var font = style.Font;
+            //var paragraphFormat = style.ParagraphFormat;
+            font.Name = "Times New Roman";
+            font.Size = 14;
+            font.Color = Word.WdColor.wdColorAutomatic;
+            //paragraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpace1pt5;
+
+            // Устанавливаю стиль для номера страницы
+            selection.set_Style(style);
+
+            // Возвращаюсь к главному документу
+            WordApp.ActiveWindow.ActivePane.View.SeekView = Word.WdSeekView.wdSeekMainDocument;
+        }
+
+        private void SetPageMargin()
+        {
+            // Настройка номера страницы "отсюда" (где сейчас курсор стоит) до конца документа
+            var pageSetup = WordDoc.Range(WordApp.Selection.Start, WordDoc.Content.End).PageSetup;
+            // Вертикальная ориентация страницы
+            pageSetup.Orientation = Word.WdOrientation.wdOrientPortrait;
+            // Настройка длины полей сверху, снизу, слева и справа соответственно.
+            pageSetup.TopMargin = WordApp.CentimetersToPoints(2);
+            pageSetup.BottomMargin = WordApp.CentimetersToPoints(2);
+            pageSetup.LeftMargin = WordApp.CentimetersToPoints(3);
+            pageSetup.RightMargin = WordApp.CentimetersToPoints(1.5f);
+        }
+
         ~MakeDoc()
         {
             if (Used) return;
-            WordDoc.SaveAs2(FileName: Path ?? "temp.docx");
-            WordApp.Quit();
+            try
+            {
+                WordDoc.SaveAs2(FileName: Path ?? "temp.docx");
+            }
+            finally
+            {
+                WordApp.Quit(SaveChanges:false);
+            }
         }
         public void AddText(string text)
         {
@@ -88,8 +159,23 @@ namespace DiplomMaker
                 RaiseUsedException();
                 return;
             }
-            WordDoc.SaveAs2(FileName: path ?? Path ?? "temp.docx");
-            WordApp.Quit();
+            while(true)
+            {
+                try
+                {
+                    WordDoc.SaveAs2(FileName: path ?? Path ?? "temp.docx");
+                    WordApp.Quit();
+                    break;
+                }
+                catch(Exception e) 
+                {
+                    if (MessageBox.Show(e.Message+"\nYes - Продолжить попытки сохранения\nNo - не сохранять файл", "Exception", MessageBoxButton.YesNo) == MessageBoxResult.No)
+                    {
+                        WordApp.Quit(false);
+                        break;
+                    }
+                }
+            }
             Used = true;
         }
         private void InitStyles()
