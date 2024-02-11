@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -45,7 +46,6 @@ namespace DiplomMaker
         {
             // Путь для сохранения файла по умолчанию
             Path = path;
-
             // init word things
             WordApp = new Word.Application();
             WordDoc = WordApp.Documents.Add();
@@ -76,7 +76,7 @@ namespace DiplomMaker
 
             // Добавить сам номер страницы
             var pageNumber = footer.PageNumbers.Add(Word.WdPageNumberAlignment.wdAlignPageNumberCenter);
-            
+
             // Перехожу к текущему нижнему колонтитулу
             WordApp.ActiveWindow.ActivePane.View.SeekView = Word.WdSeekView.wdSeekCurrentPageFooter;
             // Передвигаю курсор на 2 элемента влево (эквивалентно нажатию 2 раза на кнопку ←)
@@ -123,7 +123,7 @@ namespace DiplomMaker
             }
             finally
             {
-                WordApp.Quit(SaveChanges:false);
+                WordApp.Quit(SaveChanges: false);
             }
         }
         public void AddText(string text)
@@ -134,15 +134,14 @@ namespace DiplomMaker
                 return;
             }
             // Parse text
-            Paragraph[] pars = ParseText(text);
+            DocContent doc = ParseText(text);
             // add text
             var selection = WordApp.Selection;
-            for (int i = 0; i < pars.Length; i++)
+            for (int i = 0; i < doc.Paragraphs.Length; i++)
             {
-                Paragraph par = pars[i];
+                Paragraph par = doc.Paragraphs[i];
                 par.PreAction(selection);
-                selection.TypeText(par.Text);
-                selection.set_Style(par.MyStyle.Style);
+                par.MainAction(selection);
                 par.PostAction(selection);
             }
         }
@@ -159,7 +158,7 @@ namespace DiplomMaker
                 RaiseUsedException();
                 return;
             }
-            while(true)
+            while (true)
             {
                 try
                 {
@@ -167,9 +166,9 @@ namespace DiplomMaker
                     WordApp.Quit();
                     break;
                 }
-                catch(Exception e) 
+                catch (Exception e)
                 {
-                    if (MessageBox.Show(e.Message+"\nYes - Продолжить попытки сохранения\nNo - не сохранять файл", "Exception", MessageBoxButton.YesNo) == MessageBoxResult.No)
+                    if (MessageBox.Show(e.Message + "\nYes - Продолжить попытки сохранения\nNo - не сохранять файл", "Exception", MessageBoxButton.YesNo) == MessageBoxResult.No)
                     {
                         WordApp.Quit(false);
                         break;
@@ -208,28 +207,64 @@ namespace DiplomMaker
                 style.Font.Bold = True;
         }
 
-        public Paragraph[] ParseText(string text)
+        public DocContent ParseText(string text)
         {
+            var doc = new DocContent();
+
+            // Найти все формулы в тексте
+            var formulasMatch = Paragraph.FormulaParagraph.Matches(text);
+            for (int i = 0; i < formulasMatch.Count; i++)
+            {
+                // Найти номер в строке формулы
+                var numberMatch = Paragraph.Numbers.Match(formulasMatch[i].Value);
+                // Добавить номер в словарь формул
+                doc.Numbers[numberMatch.Value] = (i + 1).ToString();
+            }
+            // Найти все номера в тексте (кроме формул, картинок и таблиц)
+            var numbersMatch = Paragraph.NumbersInAllTextExceptFormulasImages.Matches(text);
+            foreach (Match numberMatch in numbersMatch)
+            {
+                // Преобразовать номер (убрать символ номера и лишние пустые символы)
+                var key = numberMatch.Value.Replace("№", "").Trim();
+                // Если этот номер есть в словаре, то
+                if (doc.Numbers.ContainsKey(key))
+                {
+                    // Сохранить начальную позицию первого появления номера в тексте
+                    var pos = text.IndexOf(numberMatch.Value);
+                    // Заменить переменный номер на номер из словаря
+                    text = text.Substring(0, pos) + doc.Numbers[key] + text.Substring(pos+numberMatch.Value.Length);
+                    // В итоге будут заменены все номера, кроме тех, которые в строквх формул, изображений и таблиц,
+                    // чтобы не сбивать форматирование последних.
+                }
+                
+            }
+            // Разделить весь текст по строкам
             var lines = text.Trim().Replace("\r\n", "\n").Split('\r', '\n');
-            var arr = new Paragraph[lines.Length];
+            doc.Paragraphs = new Paragraph[lines.Length];
+            // Для каждой строки
             for (int i = 0; i < lines.Length; i++)
             {
-                arr[i] = new Paragraph();
+                doc.Paragraphs[i] = new Paragraph();
                 var line = lines[i];
+                // Если строка - обычный заголовок, то
                 var match = Paragraph.RegularHeading.Match(line);
                 if (match.Success)
                 {
-                    arr[i].MyStyle = new MyStyle(MainHeading);
-                    arr[i].Text = match.Value;
-                    arr[i].PreAction = (s) => s.InsertBreak(Word.WdBreakType.wdPageBreak);
+                    // Установить стиль "MainHeading"
+                    doc.Paragraphs[i].MyStyle = new MyStyle(MainHeading);
+                    doc.Paragraphs[i].Text = match.Value;
+                    doc.Paragraphs[i].PreAction = (s) => s.InsertBreak(Word.WdBreakType.wdPageBreak);
                     continue;
                 }
+                // Если строка - списочный заголовок, то
                 match = Paragraph.ListHeading.Match(line);
                 if (match.Success)
                 {
                     Word.Style style;
+                    // Установить стиль в зависимости от количества решёток в начале строки
+                    // Правда будет проблема, если # стоит не в начале. На позицию # пока нет проверки
                     int level = line.Count(x => x == '#') - 1;
-                    if (i > 0 && arr[i - 1].MyStyle.IsHeading)
+                    if (i > 0 && doc.Paragraphs[i - 1].MyStyle.IsHeading)
                     {
                         style = (new[] {
                             ListHeading1,
@@ -247,22 +282,54 @@ namespace DiplomMaker
                             ListHeading4AfterText
                         }[level]);
                     }
-                    arr[i].MyStyle = new MyStyle(style);
-                    arr[i].Text = match.Value;
-                    if (level == 0) arr[i].PreAction = (s) => s.InsertBreak(Word.WdBreakType.wdPageBreak);
+                    doc.Paragraphs[i].MyStyle = new MyStyle(style);
+                    doc.Paragraphs[i].Text = match.Value;
+                    // Если заголовок первого уровня - вставить разрыв страницы
+                    if (level == 0) doc.Paragraphs[i].PreAction = (s) => s.InsertBreak(Word.WdBreakType.wdPageBreak);
                     continue;
                 }
+                // Если строка является строкой списка чёрточек, то
                 match = Paragraph.DashList.Match(line);
                 if (match.Success)
                 {
-                    arr[i].MyStyle = new MyStyle(DashList);
-                    arr[i].Text = match.Value;
+                    doc.Paragraphs[i].MyStyle = new MyStyle(DashList);
+                    doc.Paragraphs[i].Text = match.Value;
                     continue;
                 }
-                arr[i].MyStyle = new MyStyle(RegularText);
-                arr[i].Text = line;
+                // Если строка является строкой формулы, то
+                match = Paragraph.FormulaParagraph.Match(line);
+                if (match.Success)
+                {
+                    doc.Paragraphs[i].MyStyle = new MyStyle(FormulaParagraph);
+                    // Найти саму формулу в этой строке
+                    var formulaMatch = Paragraph.FormulaLine.Match(line);
+                    // Найти номер этой формулы
+                    var number = Paragraph.Numbers.Match(line);
+                    // Изменить MainAction
+                    doc.Paragraphs[i].MainAction = (s) =>
+                    {
+                        // Вставить начальную табуляцию
+                        s.TypeText("\t");
+                        // Добавить объект формулы
+                        var oMath = s.OMaths.Add(s.Range);
+                        // Ввести формулу
+                        s.TypeText(formulaMatch.Value);
+                        // Построить формулу
+                        oMath.OMaths.BuildUp();
+                        // Передвинуть курсор на 1 позицию вправо (чтобы выйти из формулы)
+                        s.MoveRight(Word.WdUnits.wdCharacter, 1);
+                        // Ввести ещё 1 табуляцию и номер формулы
+                        s.TypeText($"\t({doc.Numbers[number.Value]})");
+                        // Установить стиль формулы
+                        s.set_Style(FormulaParagraph);
+                    };
+                    continue;
+                }
+                // Если ни один стиль не подошёл, то это обычная строка
+                doc.Paragraphs[i].MyStyle = new MyStyle(RegularText);
+                doc.Paragraphs[i].Text = line;
             }
-            return arr;
+            return doc;
         }
 
     }

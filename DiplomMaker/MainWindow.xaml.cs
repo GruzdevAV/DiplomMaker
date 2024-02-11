@@ -166,10 +166,17 @@ namespace DiplomMaker
 
             await Task.Run(() =>
             {
-                MakeDoc doc = new MakeDoc(fileName);
-                doc.AddText(MarkupText);
-                doc.SaveAndFinish();
-                MessageBox.Show("Файл Word сохранён.", "Успех");
+                try
+                {
+                    MakeDoc doc = new MakeDoc(fileName);
+                    doc.AddText(MarkupText);
+                    doc.SaveAndFinish();
+                    MessageBox.Show("Файл Word сохранён.", "Успех");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Возникла ошибка");
+                }
             });
         }
         //Видеть документ https://stackoverflow.com/questions/1859641/load-word-excel-into-wpf

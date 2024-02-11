@@ -15,7 +15,7 @@ using Word = Microsoft.Office.Interop.Word;
 namespace DiplomMaker
 {
     public partial class MakeDoc
-    {
+    {/*
         private Word.Style GetStyleMainHeading(string name = "MainHeading")
         {
             var style = GetDefaultStyle(name);
@@ -251,6 +251,6 @@ namespace DiplomMaker
             style.Frame.Delete();
             return style;
         }
-
+        */
     }
 }
