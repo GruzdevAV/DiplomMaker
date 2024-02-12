@@ -11,6 +11,7 @@ namespace DiplomMaker
 {
     public partial class MakeDoc
     {
+        // Для параграфов
         public static string DefaultFontName_forStyle { get; set; } = "Times New Roman";
         public static int? DefaultFontSize { get; set; } = 14;
         public static bool? DefaultBold { get; set; } = null;
@@ -31,7 +32,7 @@ namespace DiplomMaker
         public static bool? defaultKeepTogether { get; set; } = null;
         public static Word.WdOutlineLevel? DefaultOutlineLevel { get; set; } = null;
         public static bool? DefaultAllCaps { get; set; } = null;
-
+        // Для списков
         public static string DefaultFontName_ForListLevel { get; set; } = null;
         public static string DefaultNumberFormat { get; set; } = null;
         public static Word.WdTrailingCharacter? DefaultTrailingCharacter { get; set; } = Word.WdTrailingCharacter.wdTrailingTab;
@@ -44,14 +45,31 @@ namespace DiplomMaker
         public static int? DefaultStartAt { get; set; } = null;
         public static Word.Style DefaultLinkedStyle { get; set; } = null;
 
-
-
-
-
-
-
-
-        // Пока просто заготовка
+        /// <summary>
+        /// Получить новый стиль для абзаца
+        /// </summary>
+        /// <param name="styleName">Имя создаваемого стиля</param>
+        /// <param name="fontName">Шрифт</param>
+        /// <param name="fontSize">Кегель шрифта</param>
+        /// <param name="bold">Жирный ли</param>
+        /// <param name="italic">Наклонный ли</param>
+        /// <param name="strikeThrough">Перечёркнутый ли</param>
+        /// <param name="underline">Подчёркивание</param>
+        /// <param name="underlineColor">Цвет подчёркивания</param>
+        /// <param name="fontColor">Цвет шрифта</param>
+        /// <param name="leftIndent">Отступ слева</param>
+        /// <param name="rightIndent">Отступ справа</param>
+        /// <param name="firstLineIndent">Отступ первой строки</param>
+        /// <param name="spaceAfter">Отступ перед текстом</param>
+        /// <param name="spaceBefore">Отступ после текста</param>
+        /// <param name="lineSpacingRule">Правило междустрочного интервала</param>
+        /// <param name="lineSpacing">Значение междустрочного интервала</param>
+        /// <param name="alignment">Выравнивание</param>
+        /// <param name="keepWithNext">Не отрывать от следующего</param>
+        /// <param name="keepTogether">Не разрывать абзац</param>
+        /// <param name="outlineLevel">Уровень заголовка (10 - обычный текст)</param>
+        /// <param name="allCaps">Все заглавные</param>
+        /// <returns>Стиль абзаца</returns>
         private Word.Style GetNewParagraphStyle
                 (
                     string styleName,

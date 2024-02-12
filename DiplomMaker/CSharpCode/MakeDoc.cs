@@ -21,6 +21,9 @@ namespace DiplomMaker
     {
         const int True = -1;
         const int False = 0;
+        /// <summary>
+        /// Использован ли этот экземпляр класса
+        /// </summary>
         private bool Used = false;
         Word.Application WordApp { get; set; }
         Word.Document WordDoc { get; set; }
@@ -41,10 +44,12 @@ namespace DiplomMaker
         Word.Style AfterTableBeforeHeading { get; set; }
         Word.Style TestListStyle { get; set; }
         Word.Style DashList { get; set; }
+        /// <summary>
+        /// Путь для сохранения файла по умолчанию
+        /// </summary>
         public string Path { get; set; }
         public MakeDoc(string path = null)
         {
-            // Путь для сохранения файла по умолчанию
             Path = path;
             // init word things
             WordApp = new Word.Application();
