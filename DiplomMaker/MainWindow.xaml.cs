@@ -50,13 +50,13 @@ namespace DiplomMaker
         public MainWindow()
         {
             InitializeComponent();
-            _update_timer = new System.Timers.Timer
-            {
-                AutoReset = false,
-                Interval = 2000,
-                Enabled = false
-            };
-            _update_timer.Elapsed += _update_timer_Elapsed;
+            //_update_timer = new System.Timers.Timer
+            //{
+            //    AutoReset = false,
+            //    Interval = 2000,
+            //    Enabled = false
+            //};
+            //_update_timer.Elapsed += _update_timer_Elapsed;
         }
         private void LoadMarkupText(string path)
         {

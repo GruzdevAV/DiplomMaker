@@ -1,18 +1,7 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.ApplicationServices;
-using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media.TextFormatting;
-using System.Xml.Linq;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace DiplomMaker
@@ -52,7 +41,7 @@ namespace DiplomMaker
         {
             Path = path;
             // init word things
-            WordApp = new Word.Application();
+            WordApp = new Word.Application() { Visible = true };
             WordDoc = WordApp.Documents.Add();
 
             // Initialize
@@ -222,7 +211,15 @@ namespace DiplomMaker
             {
                 // Найти номер в строке формулы
                 var numberMatch = Paragraph.Numbers.Match(formulasMatch[i].Value);
-                // Добавить номер в словарь формул
+                // Добавить номер в словарь номеров
+                doc.Numbers[numberMatch.Value] = (i + 1).ToString();
+            }
+            var imagesMatch = Paragraph.ImageParagraph.Matches(text);
+            for (int i = 0; i < imagesMatch.Count; i++)
+            {
+                // Найти номер в строке изображения
+                var numberMatch = Paragraph.Numbers.Match(imagesMatch[i].Value);
+                // Добавить номер в словарь номеров
                 doc.Numbers[numberMatch.Value] = (i + 1).ToString();
             }
             // Найти все номера в тексте (кроме формул, картинок и таблиц)
@@ -321,12 +318,36 @@ namespace DiplomMaker
                         s.TypeText(formulaMatch.Value);
                         // Построить формулу
                         oMath.OMaths.BuildUp();
-                        // Передвинуть курсор на 1 позицию вправо (чтобы выйти из формулы)
-                        s.MoveRight(Word.WdUnits.wdCharacter, 1);
+                        //// Передвинуть курсор на 1 позицию вправо (чтобы выйти из формулы)
+                        //s.MoveRight(Word.WdUnits.wdCharacter, 1);
+                        // Передвинуть курсор в конец строки
+                        // Несколько раз, так как возникает какая-то брехня с границами формул,
+                        // и 1 раза не достаточно.
+                        s.EndKey(Word.WdUnits.wdLine);
+                        s.EndKey(Word.WdUnits.wdLine);
+                        s.EndKey(Word.WdUnits.wdLine);
                         // Ввести ещё 1 табуляцию и номер формулы
                         s.TypeText($"\t({doc.Numbers[number.Value]})");
                         // Установить стиль формулы
                         s.set_Style(FormulaParagraph);
+                    };
+                    continue;
+                }
+                match = Paragraph.ImageParagraph.Match(line);
+                if (match.Success)
+                {
+                    var path = Paragraph.ImagePath.Match(match.Value);
+                    var title = Paragraph.ImageTitle.Match(match.Value);
+                    var number = Paragraph.Numbers.Match(match.Value);
+                    doc.Paragraphs[i].MyStyle = new MyStyle(ImageParagraph);
+                    doc.Paragraphs[i].MainAction = (s) =>
+                    {
+                        s.InlineShapes.AddPicture(path.Value, LinkToFile: false, SaveWithDocument: true);
+                        s.set_Style(ImageParagraph);
+                        s.MoveRight(Word.WdUnits.wdCharacter, 1);
+                        s.TypeParagraph();
+                        s.TypeText($"Рисунок {doc.Numbers[number.Value]} – {title.Value}");
+                        s.set_Style(ImageNumberParagraph);
                     };
                     continue;
                 }
